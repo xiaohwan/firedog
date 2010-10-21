@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<!DOCTYPE window [
+<!ENTITY % firebugDTD SYSTEM "chrome://firebug/locale/firebug.dtd">
+%firebugDTD;
+<!ENTITY % browserDTD SYSTEM "chrome://browser/locale/browser.dtd" >
+%browserDTD;
+]>
+<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+	<script src="chrome://firedog/content/firedog.js" type="application/x-javascript"></script>
+	<script src="chrome://firedog/content/io.js" type="application/x-javascript"></script>
+	<commandset id="mainCommandSet">
+		<command id="cmd_fdTakeSnapshot" oncommand="Firebug.Firedog.onTakeSnapshot(FirebugContext)"/>
+	</commandset>
+
+	<toolbar id="fbToolbar" align="center">
+		<hbox id="fbToolbarInner" insertbefore="fbDetachButton" flex="1" align="center">
+			<hbox id="fbFiredogButtons" insertafter="fbNetButtons">
+				<toolbarseparator/>
+				<toolbarbutton id="fdTakeSnapshot" label="Take a Snapshot" class="toolbar-text-button" tooltiptext="Take a snapshot on current status" command="cmd_fdTakeSnapshot"/>
+				<menulist id="fdSnapshotMenu" oncommand="return Firebug.Firedog.onSelectSnapshot(event, FirebugContext);">
+					<menupopup id="fdSnapshotMenuPopup"></menupopup>
+				</menulist>
+			</hbox>
+		</hbox>
+	</toolbar>
+</overlay>
