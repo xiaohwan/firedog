@@ -169,11 +169,21 @@ FBL.ns(function() {
 			},
 			onCheckCompareTo: function(context) {
 				try {
-					panels[contexts.indexOf(context)].enableCompareToMenu();
+					panels[contexts.indexOf(context)].toggleCompareToMenuEnabled();
 				} catch(ex) {
 					alert(ex);
 				}
 			},
+			onCompare: function(context) {
+				try {
+					var panel = panels[contexts.indexOf(context)];
+					var info = panel.getCompareSetup();
+					alert(info);
+				} catch(ex) {
+					alert(ex);
+				}
+			},
+			compareSnapshots: function(snapshot1, snapshot2, id) {},
 			initWatchdog: function() {
 				try {
 					var targetObjects = [];
@@ -297,49 +307,59 @@ FBL.ns(function() {
 			title: 'Firedog',
 			initialize: function() {
 				Firebug.Panel.initialize.apply(this, arguments);
-				panels[contexts.indexOf(this.context)] = this;
+				// NOTE:
+				this.index = contexts.indexOf(this.context);
+				panels[this.index] = this;
+				// NOTE:
+				this.menu1 = $('fdSnapshotMenu');
+				this.menu2 = $('fdCompareToMenu');
+				this.popup1 = $('fdSnapshotMenuPopup');
+				this.popup2 = $('fdCompareToMenuPopup');
+				this.identifier = $('fdIdentifierProperty');
+				this.menuPanel = $('fdSnapshotMenuPanel');
+				this.comparePanel = $('fdCompareMenuPanel');
+				this.chk = $('fdCompare');
+				this.compare = $('fdCompare');
 			},
-enableCompareToMenu: function() {
-	var menu2 = $('fdCompareToMenu');
-	menu2.disabled = false;
-},
+			toggleCompareToMenuEnabled: function() {
+				this.menu2.disabled = ! this.menu2.disabled;
+				this.compare.disabled = ! this.compare.disabled;
+			},
+			getCompareSetup: function() {
+				// TODO:
+				return [this.menu1.selectedIndex, this.menu2.selectedIndex, this.identifier.value];
+			},
 			updateSnapshotMenu: function() {
 				var items = snapshots[contexts.indexOf(this.context)];
-				var menuPanel = $('fdSnapshotMenuPanel');
-				var menu1 = $('fdSnapshotMenu');
-				var popup1 = $('fdSnapshotMenuPopup');
-				var comparePanel = $('fdCompareMenuPanel');
-				var chk = $('fdCompare');
-				var menu2 = $('fdCompareToMenu');
-				var popup2 = $('fdCompareToMenuPopup');
 
 				if (items && items.length) {
-					FBL.eraseNode(popup1);
-					FBL.eraseNode(popup2);
+					FBL.eraseNode(this.popup1);
+					FBL.eraseNode(this.popup2);
 					for (var i = 0, len = items.length; i < len; i++) {
-						FBL.createMenuItem(popup1, {
+						FBL.createMenuItem(this.popup1, {
 							value: i,
 							label: items[i].title,
 							type: 'radio'
 						});
-						FBL.createMenuItem(popup2, {
+						FBL.createMenuItem(this.popup2, {
 							value: i,
 							label: items[i].title,
 							type: 'radio'
 						});
 					}
-					menu1.selectedIndex = len - 1;
+					this.menu1.selectedIndex = len - 1;
 					if (items.length > 1) {
-						menu2.selectedIndex = len - 2;
-						chk.checked = false;
-						menu2.disabled = true;
-						collapse(comparePanel, false);
+						this.menu2.selectedIndex = len - 2;
+						this.chk.checked = false;
+						this.menu2.disabled = true;
+						this.compare.disabled = true;
+						collapse(this.comparePanel, false);
 					} else {
-						collapse(comparePanel, true);
+						collapse(this.comparePanel, true);
 					}
-					collapse(menuPanel, false);
+					collapse(this.menuPanel, false);
 				} else {
-					collapse(menuPanel, true);
+					collapse(this.menuPanel, true);
 				}
 			}
 		});
