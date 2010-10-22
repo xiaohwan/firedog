@@ -10,6 +10,7 @@
 	<script src="chrome://firedog/content/io.js" type="application/x-javascript"></script>
 	<commandset id="mainCommandSet">
 		<command id="cmd_fdTakeSnapshot" oncommand="Firebug.Firedog.onTakeSnapshot(FirebugContext)"/>
+		<command id="cmd_fdCheckCompareTo" oncommand="Firebug.Firedog.onCheckCompareTo(FirebugContext)"/>
 	</commandset>
 
 	<toolbar id="fbToolbar" align="center">
@@ -17,9 +18,17 @@
 			<hbox id="fbFiredogButtons" insertafter="fbNetButtons">
 				<toolbarseparator/>
 				<toolbarbutton id="fdTakeSnapshot" label="Take a Snapshot" class="toolbar-text-button" tooltiptext="Take a snapshot on current status" command="cmd_fdTakeSnapshot"/>
-				<menulist id="fdSnapshotMenu" oncommand="return Firebug.Firedog.onSelectSnapshot(event, FirebugContext);">
-					<menupopup id="fdSnapshotMenuPopup"></menupopup>
-				</menulist>
+				<hbox id="fdSnapshotMenuPanel">
+					<menulist id="fdSnapshotMenu" oncommand="return Firebug.Firedog.onSelectSnapshot(event, FirebugContext);">
+						<menupopup id="fdSnapshotMenuPopup"/>
+					</menulist>
+					<hbox id="fdCompareMenuPanel">
+						<checkbox id="fdCompare" label="Compare to" checked="false" command="cmd_fdCheckCompareTo"/>
+						<menulist id="fdCompareToMenu" oncommand="return Firebug.Firedog.onSelectCompareTo(event, FirebugContext);">
+							<menupopup id="fdCompareToMenuPopup"/>
+						</menulist>
+					</hbox>
+				</hbox>
 			</hbox>
 		</hbox>
 	</toolbar>

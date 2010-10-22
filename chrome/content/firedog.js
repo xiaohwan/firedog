@@ -127,8 +127,7 @@ FBL.ns(function() {
 				snapshots.splice(contexts.indexOf(context), 1);
 				contexts.splice(contexts.indexOf(context), 1);
 			},
-			onSelectSnapshot: function(evt, context) {
-			},
+			onSelectSnapshot: function(evt, context) {},
 			profile: function(context) {
 				// NOTE: cache snapshots by disk file and remove objects in snapshots from JS context
 				//       in case of objects in snapshots are profiled again.
@@ -164,6 +163,13 @@ FBL.ns(function() {
 				try {
 					this.profile(context);
 					panels[contexts.indexOf(context)].updateSnapshotMenu();
+				} catch(ex) {
+					alert(ex);
+				}
+			},
+			onCheckCompareTo: function(context) {
+				try {
+					panels[contexts.indexOf(context)].enableCompareToMenu();
 				} catch(ex) {
 					alert(ex);
 				}
@@ -293,23 +299,47 @@ FBL.ns(function() {
 				Firebug.Panel.initialize.apply(this, arguments);
 				panels[contexts.indexOf(this.context)] = this;
 			},
+enableCompareToMenu: function() {
+	var menu2 = $('fdCompareToMenu');
+	menu2.disabled = false;
+},
 			updateSnapshotMenu: function() {
 				var items = snapshots[contexts.indexOf(this.context)];
-				var popup = $('fdSnapshotMenuPopup');
-				var menu = $('fdSnapshotMenu');
+				var menuPanel = $('fdSnapshotMenuPanel');
+				var menu1 = $('fdSnapshotMenu');
+				var popup1 = $('fdSnapshotMenuPopup');
+				var comparePanel = $('fdCompareMenuPanel');
+				var chk = $('fdCompare');
+				var menu2 = $('fdCompareToMenu');
+				var popup2 = $('fdCompareToMenuPopup');
+
 				if (items && items.length) {
-					FBL.eraseNode(popup);
-					for (var i = 0, len = items.length; i < len; i ++) {
-						FBL.createMenuItem(popup, {
+					FBL.eraseNode(popup1);
+					FBL.eraseNode(popup2);
+					for (var i = 0, len = items.length; i < len; i++) {
+						FBL.createMenuItem(popup1, {
+							value: i,
+							label: items[i].title,
+							type: 'radio'
+						});
+						FBL.createMenuItem(popup2, {
 							value: i,
 							label: items[i].title,
 							type: 'radio'
 						});
 					}
-					menu.selectedIndex = len - 1;
-					collapse(menu, false);
+					menu1.selectedIndex = len - 1;
+					if (items.length > 1) {
+						menu2.selectedIndex = len - 2;
+						chk.checked = false;
+						menu2.disabled = true;
+						collapse(comparePanel, false);
+					} else {
+						collapse(comparePanel, true);
+					}
+					collapse(menuPanel, false);
 				} else {
-					collapse(menu, true);
+					collapse(menuPanel, true);
 				}
 			}
 		});
