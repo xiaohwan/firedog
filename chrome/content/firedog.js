@@ -178,12 +178,36 @@ FBL.ns(function() {
 				try {
 					var panel = panels[contexts.indexOf(context)];
 					var info = panel.getCompareSetup();
-					alert(info);
+					var _snapshots = snapshots[contexts.indexOf(context)];
+					snapshot1 = _snapshots[info[1]].data;
+					snapshot2 = _snapshots[info[0]].data;
+					alert(JSON.stringify(this.compareSnapshots(snapshot1, snapshot2, info[2])));
 				} catch(ex) {
 					alert(ex);
 				}
 			},
-			compareSnapshots: function(snapshot1, snapshot2, id) {},
+			compareSnapshots: function(snapshot1, snapshot2, id) {
+				var objs = [],
+				s1 = {};
+				// NOTE: default identifier for GI;
+				id = id || '_jsxid';
+				// NOTE: index object info in snapshot1 by identifier;
+				for (var p in snapshot1) {
+					if (snapshot1[p].properties && snapshot1[p].properties[id]) {
+						s1[snapshot1[p].properties[id]] = snapshot1[p];
+					}
+				}
+				// NOTE: walk through all objects in snapshot2 to see if the value of identifier property is in s1;
+				for (p in snapshot2) {
+					if (snapshot2[p].properties && snapshot2[p].properties[id]) {
+						if (snapshot2[p].properties[id] in s1) {
+						} else {
+							objs.push(snapshot2[p]);
+						}
+					}
+				}
+				return objs;
+			},
 			initWatchdog: function() {
 				try {
 					var targetObjects = [];
