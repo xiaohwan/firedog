@@ -342,8 +342,10 @@ FBL.ns(function() {
 				this.identifier = $('fdIdentifierProperty');
 				this.menuPanel = $('fdSnapshotMenuPanel');
 				this.comparePanel = $('fdCompareMenuPanel');
-				this.chk = $('fdCompare');
+				this.chk = $('fdCompareCheck');
 				this.compare = $('fdCompare');
+				var defaultContent = Firebug.Firedog.DefaultContent;
+				defaultContent.render(this.panelNode);
 			},
 			toggleCompareToMenuEnabled: function() {
 				this.menu2.disabled = ! this.menu2.disabled;
