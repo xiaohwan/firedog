@@ -6,9 +6,8 @@
 %browserDTD;
 ]>
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-	<script src="chrome://firedog/content/io.js" type="application/x-javascript"></script>
+	<script src="chrome://firedog/content/ext/io.js" type="application/x-javascript"></script>
 	<script src="chrome://firedog/content/firedog.js" type="application/x-javascript"></script>
-	<script src="chrome://firedog/content/firedog.content.default.js" type="application/x-javascript"></script>
 	<commandset id="mainCommandSet">
 		<command id="cmd_fdTakeSnapshot" oncommand="Firebug.Firedog.onTakeSnapshot(FirebugContext)"/>
 		<command id="cmd_fdCheckCompareTo" oncommand="Firebug.Firedog.onCheckCompareTo(FirebugContext)"/>
