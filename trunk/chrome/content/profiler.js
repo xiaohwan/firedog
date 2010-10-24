@@ -2,7 +2,8 @@ function doProfiling() {
 	var interestClass = {
 		'Object': true,
 		'Call': true,
-		'Function': true
+		'Function': true,
+		'Array': true
 	};
 	var windows = {};
 	var namedObjects = getNamedObjects();
