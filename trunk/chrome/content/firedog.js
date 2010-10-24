@@ -21,6 +21,11 @@ FBL.ns(function() {
 	PROFILE_FILE.append('chrome');
 	PROFILE_FILE.append('content');
 	PROFILE_FILE.append(PROFILE_FILE_NAME);
+	// NOTE:
+	var REPORT_HTML = LOC.getItemLocation(EXTENSION_ID);
+	REPORT_HTML.append('chrome');
+	REPORT_HTML.append('content');
+	REPORT_HTML.append('firedog.content.report.html');
 
 	var Snapshot = function(id, title, data) {
 		this.id = id;
@@ -56,6 +61,26 @@ FBL.ns(function() {
 			}
 		}
 	};
+
+	var Content = (function() {
+		var path = 'chrome://firedog/content/firedog.content.report.html';
+
+		var Constructor = function(container) {
+			container.innerHTML = '<iframe id="report" style="border:none;width:100%;height:100%;padding:0;margin:0;"></iframe>';
+			var iframe = container.children[0];
+			iframe.src = path;
+			this.contentWindow = iframe.contentWindow;
+			this.contentDocument = this.contentWindow.document;
+		};
+		Constructor.prototype.render = function(data) {
+			try {
+				this.contentWindow.render(data);
+			} catch(ex) {
+				alert(ex);
+			}
+		};
+		return Constructor;
+	})();
 
 	function getBinaryComponent() {
 		try {
@@ -181,7 +206,7 @@ FBL.ns(function() {
 					var _snapshots = snapshots[contexts.indexOf(context)];
 					snapshot1 = _snapshots[info[1]].data;
 					snapshot2 = _snapshots[info[0]].data;
-					alert(JSON.stringify(this.compareSnapshots(snapshot1, snapshot2, info[2])));
+					panel.showCompareResults(this.compareSnapshots(snapshot1, snapshot2, info[2]));
 				} catch(ex) {
 					alert(ex);
 				}
@@ -200,8 +225,7 @@ FBL.ns(function() {
 				// NOTE: walk through all objects in snapshot2 to see if the value of identifier property is in s1;
 				for (p in snapshot2) {
 					if (snapshot2[p].properties && snapshot2[p].properties[id]) {
-						if (snapshot2[p].properties[id] in s1) {
-						} else {
+						if (snapshot2[p].properties[id] in s1) {} else {
 							objs.push(snapshot2[p]);
 						}
 					}
@@ -330,26 +354,32 @@ FBL.ns(function() {
 			name: 'Firedog',
 			title: 'Firedog',
 			initialize: function() {
-				Firebug.Panel.initialize.apply(this, arguments);
-				// NOTE:
-				this.index = contexts.indexOf(this.context);
-				panels[this.index] = this;
-				// NOTE:
-				this.menu1 = $('fdSnapshotMenu');
-				this.menu2 = $('fdCompareToMenu');
-				this.popup1 = $('fdSnapshotMenuPopup');
-				this.popup2 = $('fdCompareToMenuPopup');
-				this.identifier = $('fdIdentifierProperty');
-				this.menuPanel = $('fdSnapshotMenuPanel');
-				this.comparePanel = $('fdCompareMenuPanel');
-				this.chk = $('fdCompareCheck');
-				this.compare = $('fdCompare');
-				var defaultContent = Firebug.Firedog.DefaultContent;
-				defaultContent.render(this.panelNode);
+				try {
+					Firebug.Panel.initialize.apply(this, arguments);
+					// NOTE:
+					this.index = contexts.indexOf(this.context);
+					panels[this.index] = this;
+					// NOTE:
+					this.menu1 = $('fdSnapshotMenu');
+					this.menu2 = $('fdCompareToMenu');
+					this.popup1 = $('fdSnapshotMenuPopup');
+					this.popup2 = $('fdCompareToMenuPopup');
+					this.identifier = $('fdIdentifierProperty');
+					this.menuPanel = $('fdSnapshotMenuPanel');
+					this.comparePanel = $('fdCompareMenuPanel');
+					this.chk = $('fdCompareCheck');
+					this.compare = $('fdCompare');
+					this.content = new Content(this.panelNode);
+				} catch(ex) {
+					alert(ex);
+				}
 			},
 			toggleCompareToMenuEnabled: function() {
 				this.menu2.disabled = ! this.menu2.disabled;
 				this.compare.disabled = ! this.compare.disabled;
+			},
+			showCompareResults: function(result) {
+				this.content.render(result);
 			},
 			getCompareSetup: function() {
 				// TODO:
@@ -393,4 +423,3 @@ FBL.ns(function() {
 		Firebug.registerModule(Firebug.Firedog);
 	};
 });
-
