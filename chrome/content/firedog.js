@@ -21,11 +21,6 @@ FBL.ns(function() {
 	PROFILE_FILE.append('chrome');
 	PROFILE_FILE.append('content');
 	PROFILE_FILE.append(PROFILE_FILE_NAME);
-	// NOTE:
-	var REPORT_HTML = LOC.getItemLocation(EXTENSION_ID);
-	REPORT_HTML.append('chrome');
-	REPORT_HTML.append('content');
-	REPORT_HTML.append('firedog.content.report.html');
 
 	var Snapshot = function(id, title, data) {
 		this.id = id;
@@ -65,19 +60,21 @@ FBL.ns(function() {
 	var Content = (function() {
 		var path = 'chrome://firedog/content/firedog.content.report.html';
 
-		var Constructor = function(container) {
-			container.innerHTML = '<iframe id="report" style="border:none;width:100%;height:100%;padding:0;margin:0;"></iframe>';
+		var Constructor = function(container, cb) {
+			container.innerHTML = '<iframe id="report" src="' + path + '" style="border:none;overflow:hidden;width:100%;height:100%;padding:0;margin:0;"></iframe>';
 			var iframe = container.children[0];
-			iframe.src = path;
-			this.contentWindow = iframe.contentWindow;
-			this.contentDocument = this.contentWindow.document;
-		};
-		Constructor.prototype.render = function(data) {
-			try {
-				this.contentWindow.render(data);
-			} catch(ex) {
-				alert(ex);
-			}
+			var bContentReady = function() {
+				if (iframe.contentWindow.Content) {
+					// NOTE: inject a puber;
+					cb(iframe.contentWindow.Content);
+				} else {
+					setTimeout(function() {
+						bContentReady();
+					},
+					0);
+				}
+			};
+			bContentReady();
 		};
 		return Constructor;
 	})();
@@ -138,6 +135,7 @@ FBL.ns(function() {
 				try {
 					var isFdPanel = panel && (panel.name == PANEL);
 					var fdButtons = browser.chrome.$('fbFiredogButtons');
+					panel.model = this;
 					if (isFdPanel) {
 						collapse(fdButtons, false);
 						panel.updateSnapshotMenu();
@@ -179,7 +177,7 @@ FBL.ns(function() {
 				result = JSON.parse(result);
 				if (result.success) {
 					// NOTE: push new results to snapshots collection;
-					snapshots[contexts.indexOf(context)].push(new Snapshot(snapshots.length, targetWindow.name.slice(0, MAX_APP_NAME_LEN) + ' @ ' + startTime.toTimeString(), result.data));
+					snapshots[contexts.indexOf(context)].push(new Snapshot(snapshots.length, targetWindow.name.slice(0, MAX_APP_NAME_LEN) + ' @ ' + startTime.toTimeString().split(' ')[0], result.data));
 				} else {
 					alert(JSON.stringify(result));
 				}
@@ -187,7 +185,7 @@ FBL.ns(function() {
 			onTakeSnapshot: function(context) {
 				try {
 					this.profile(context);
-					panels[contexts.indexOf(context)].updateSnapshotMenu();
+					panels[contexts.indexOf(context)].onNewSnapshot();
 				} catch(ex) {
 					alert(ex);
 				}
@@ -369,7 +367,14 @@ FBL.ns(function() {
 					this.comparePanel = $('fdCompareMenuPanel');
 					this.chk = $('fdCompareCheck');
 					this.compare = $('fdCompare');
-					this.content = new Content(this.panelNode);
+
+					// NOTE: to improve ...
+					var me = this;
+					Content(this.panelNode, function(content) {
+						me.content = content;
+						me.content.model = me.model;
+						me.content.panelIndex = me.index;
+					});
 				} catch(ex) {
 					alert(ex);
 				}
@@ -379,15 +384,23 @@ FBL.ns(function() {
 				this.compare.disabled = ! this.compare.disabled;
 			},
 			showCompareResults: function(result) {
-				this.content.render(result);
+				this.content.showObjects(result);
+			},
+			getSelectSnapshot: function() {
+				return this.chk.checked ? this.menu2.selectedIndex: this.menu1.selectedIndex;
 			},
 			getCompareSetup: function() {
 				// TODO:
 				return [this.menu1.selectedIndex, this.menu2.selectedIndex, this.identifier.value];
 			},
-			updateSnapshotMenu: function() {
+			onNewSnapshot: function() {
 				var items = snapshots[contexts.indexOf(this.context)];
-
+				var neuu = items[items.length - 1];
+				this.content.setSnapshot(neuu);
+				this.updateSnapshotMenu();
+			},
+			updateSnapshotMenu: function(items) {
+				var items = snapshots[contexts.indexOf(this.context)];
 				if (items && items.length) {
 					FBL.eraseNode(this.popup1);
 					FBL.eraseNode(this.popup2);
@@ -423,3 +436,4 @@ FBL.ns(function() {
 		Firebug.registerModule(Firebug.Firedog);
 	};
 });
+

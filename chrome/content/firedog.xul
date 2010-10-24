@@ -28,7 +28,7 @@
 						<menulist id="fdCompareToMenu" oncommand="return Firebug.Firedog.onSelectCompareTo(event, FirebugContext);">
 							<menupopup id="fdCompareToMenuPopup"/>
 						</menulist>
-						<textbox id="fdIdentifierProperty" value="_jsxid"/>
+						<textbox id="fdIdentifierProperty" value="id"/>
 						<toolbarbutton id="fdCompare" label="Compare" class="toolbar-text-button" tooltiptext="Compare betwwen snapshots" command="cmd_fdCompare"/>
 					</hbox>
 				</hbox>
