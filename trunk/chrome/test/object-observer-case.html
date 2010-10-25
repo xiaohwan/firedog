@@ -16,7 +16,7 @@
 			}
 
 			try {
-				// NOTE: __observe__(target, setter, attr, handlers);
+				// NOTE: observe(target, setter, attr, handlers);
 				// NOTE: now only set and delete is supported, but will add get/add if see necessary;
 				// NOTE: use setter to access to target object, because we need replace the original object with wrapped object;
 				//       getter isn't necessary since we can hold wrappee and wrapped in observer code;
@@ -26,9 +26,10 @@
 				// NOTE: if handler is not provided, a default handle will work instead;
 				firedog.observe(arr, function(obj){
 					window.arr = obj;
-				}, '__len', {onSet: function(){
+				}, '__len', {onSet: function(oldv, newv, stack){
+				// TODO: you can also see call stack from firebug stack panel;
 					debugger;
-				}, onDelete: function(){
+				}, onDelete: function(value, stack){
 					debugger;
 				}});
 			} catch(ex) {
