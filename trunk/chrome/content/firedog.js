@@ -1,5 +1,5 @@
 FBL.ns(function() {
-	// NOTE: initialize;
+	/*** Definations ***/
 	const PANEL = 'Firedog';
 
 	const Cc = Components.classes;
@@ -7,10 +7,10 @@ FBL.ns(function() {
 	const Cu = Components.utils;
 
 	const EXTENSION_ID = 'firedog@lab.nuttycoder.com';
-	const PROFILE_FILE_NAME = 'profiler.js';
-	const CACHE_FILE_NAME = 'snapshots.tmp';
-	const MAX_APP_NAME_LEN = 30;
-
+	const PROFILE_FILE_NAME = 'profiler.js';	// NOTE: code for profiling; 
+												//       see http://hg.mozilla.org/labs/jetpack-sdk/file/tip/packages/nsjetpack/docs/nsjetpack.md
+	const CACHE_FILE_NAME = 'snapshots.tmp';	// NOTE: I'm using a cache file to save serialized snapshots before take another snapshot
+												//       because those snapshots objects could be also profiled;
 	const EXT_MANAGER = Cc['@mozilla.org/extensions/manager;1'].getService(Components.interfaces.nsIExtensionManager);
 	const LOC = EXT_MANAGER.getInstallLocation(EXTENSION_ID);
 	// NOTE:
@@ -22,11 +22,13 @@ FBL.ns(function() {
 	PROFILE_FILE.append('content');
 	PROFILE_FILE.append(PROFILE_FILE_NAME);
 
+	/*** Snapshot Class ***/
 	var Snapshot = function(id, title, data) {
 		this.id = id;
 		this.title = title;
 		this.data = data;
 	};
+	// NOTE: deserialize cached snapshots;
 	Snapshot.restore = function(str) {
 		var arr = JSON.parse(str);
 		var snapshots = [];
@@ -57,9 +59,17 @@ FBL.ns(function() {
 		}
 	};
 
+	/*** Content Class ***/
+	// NOTE: I'm using an embeded html page to present results;
+	//	     Snapshots are passed to embeded html, all single snapshot based operation like search, getObjectDetail happens in embeded page;
+	//       Content is used for load the html page and setup interface object to panel;
+	// TODO: refactor this content proxy;
 	var Content = (function() {
 		var path = 'chrome://firedog/content/firedog.content.report.html';
 
+		// NOTE: using a async callback to set content handler;
+		//       a setTimeout loop is because onload of the iframe is not invoked;
+		// TODO: why iframe.onload doesn't work?
 		var Constructor = function(container, cb) {
 			container.innerHTML = '<iframe id="report" src="' + path + '" style="border:none;overflow:hidden;width:100%;height:100%;padding:0;margin:0;"></iframe>';
 			var iframe = container.children[0];
@@ -79,6 +89,7 @@ FBL.ns(function() {
 		return Constructor;
 	})();
 
+	// NOTE: jetpack prototype is required;
 	function getBinaryComponent() {
 		try {
 			var factory = Cc["@labs.mozilla.com/jetpackdi;1"].createInstance(Ci.nsIJetpack);
@@ -87,6 +98,7 @@ FBL.ns(function() {
 			ERRS.push(ex);
 		}
 	}
+	// NOTE: get current call stack by throwing an exception and catching it;
 	function getCallStack() {
 		try {
 			i.dont.exist += 0;
@@ -99,6 +111,8 @@ FBL.ns(function() {
 			return stack;
 		}
 	}
+	// NOTE: read and write local file;
+	//       io.js is required;
 	function readFile(file) {
 		try {
 			return FileIO.read(file, 'utf-8');
@@ -109,28 +123,35 @@ FBL.ns(function() {
 	function writeFile(file, data) {
 		FileIO.write(file, JSON.stringify(data), null, 'utf-8');
 	}
-
+	/*** End of definations ***/
 	const PROFILE_CODE = readFile(PROFILE_FILE);
 	const Com = getBinaryComponent();
-	var ERRS = [];
-	var firedog = {};
+	/*** initialize ***/
+	var ERRS = [];			// NOTE: cache exceptions in a collection of errors because string can't display in the initialize process of module;
+	var firedog = {};		// NOTE: the object I injected to client window; {observe, unobserve, profile(todo)};
+	// NOTE: relationship between snapshots and contexts and panels are based the same index in these array:
+	//       context of panels[index] is contexts[index];
+	//       snapshots of contexts[index] is snapshots[index] which is an array with all snapshots;
 	var snapshots = [];
 	var contexts = [];
 	var panels = [];
 
 	with(FBL) {
 		Firebug.Firedog = extend(Firebug.Module, {
+			// NOTE: initContext is invoked after a page is load/reload;
 			initContext: function(context, persistedState) {
 				Firebug.Module.initContext.apply(this, arguments);
 				try {
 					snapshots[contexts.length] = [];
 					contexts.push(context);
-					this.initWatchdog();
-					this.injectFiredog(context);
+					this.initWatchdog();	// NOTE: setup firedog.observe, firedog.unobserve;
+					this.injectFiredog(context);	// NOTE: inject firedog to client window;
 				} catch(ex) {
 					ERRS.push(ex);
 				}
 			},
+			// NOTE: invoked when switch between switch panels;
+			//       also invoked when show a browser tab;
 			showPanel: function(browser, panel) {
 				try {
 					var isFdPanel = panel && (panel.name == PANEL);
@@ -146,12 +167,12 @@ FBL.ns(function() {
 					alert(ex);
 				}
 			},
+			// NOTE: invoked when close/reload a page; we clear all stored data on destroyContext;
 			destroyContext: function(context, persistedState) {
 				panels.splice(contexts.indexOf(context), 1);
 				snapshots.splice(contexts.indexOf(context), 1);
 				contexts.splice(contexts.indexOf(context), 1);
 			},
-			onSelectSnapshot: function(evt, context) {},
 			profile: function(context) {
 				// NOTE: cache snapshots by disk file and remove objects in snapshots from JS context
 				//       in case of objects in snapshots are profiled again.
@@ -178,11 +199,34 @@ FBL.ns(function() {
 				result = JSON.parse(result);
 				if (result.success) {
 					// NOTE: push new results to snapshots collection;
-					snapshots[contexts.indexOf(context)].push(new Snapshot(snapshots.length, targetWindow.name.slice(0, MAX_APP_NAME_LEN) + ' @ ' + startTime.toTimeString().split(' ')[0], result.data));
+					var ss = snapshots[contexts.indexOf(context)];
+					ss.push(new Snapshot(ss.length, (ss.length + 1) + ' @ ' + startTime.toTimeString().split(' ')[0], result.data));
 				} else {
 					alert(JSON.stringify(result));
 				}
 			},
+			compareSnapshots: function(snapshot1, snapshot2, id) {
+				var objs = [],
+				s1 = {};
+				// NOTE: default identifier for GI;
+				id = id || '_jsxid';
+				// NOTE: index object info in snapshot1 by identifier;
+				for (var p in snapshot1) {
+					if (snapshot1[p].properties && snapshot1[p].properties[id]) {
+						s1[snapshot1[p].properties[id]] = snapshot1[p];
+					}
+				}
+				// NOTE: walk through all objects in snapshot2 to see if the value of identifier property is in s1;
+				for (p in snapshot2) {
+					if (snapshot2[p].properties && snapshot2[p].properties[id]) {
+						if (snapshot2[p].properties[id] in s1) {} else {
+							objs.push(snapshot2[p]);
+						}
+					}
+				}
+				return objs;
+			},
+			/*** UI event hanlders ***/
 			onTakeSnapshot: function(context) {
 				try {
 					this.profile(context);
@@ -210,33 +254,15 @@ FBL.ns(function() {
 					alert(ex);
 				}
 			},
-			compareSnapshots: function(snapshot1, snapshot2, id) {
-				var objs = [],
-				s1 = {};
-				// NOTE: default identifier for GI;
-				id = id || '_jsxid';
-				// NOTE: index object info in snapshot1 by identifier;
-				for (var p in snapshot1) {
-					if (snapshot1[p].properties && snapshot1[p].properties[id]) {
-						s1[snapshot1[p].properties[id]] = snapshot1[p];
-					}
-				}
-				// NOTE: walk through all objects in snapshot2 to see if the value of identifier property is in s1;
-				for (p in snapshot2) {
-					if (snapshot2[p].properties && snapshot2[p].properties[id]) {
-						if (snapshot2[p].properties[id] in s1) {} else {
-							objs.push(snapshot2[p]);
-						}
-					}
-				}
-				return objs;
-			},
+			/*** Watchdog: {observe, unobserve} ***/
 			initWatchdog: function() {
 				try {
 					var targetObjects = [];
 					var targetAttributes = [];
 					var resolving = false;
 
+					// NOTE: attrMembrane include the additional methods we add to a wrapped object;
+					//       see http://hg.mozilla.org/labs/jetpack-sdk/file/tip/packages/nsjetpack/docs/nsjetpack.md for details;
 					var attrMembrane = {
 						convert: function(wrappee, wrapped, type) {
 							return wrappee.valueOf();
@@ -307,28 +333,32 @@ FBL.ns(function() {
 							return true;
 						}
 					};
-					firedog.__observe__ = function(getter, setter, targetAttribute, handlers) {
+					// NOTE: observe;
+					firedog.observe = function(target, setter, targetAttribute, handlers) {
 						try {
-							var targetObject = getter();
-							var pos = targetObjects.indexOf(targetObject);
+							var pos = targetObjects.indexOf(target);
 							if (pos == - 1) {
-								setter(Com.wrap(targetObject, attrMembrane));
-								pos = targetObjects.push(targetObject) - 1;
+								var wrapped = Com.wrap(target, attrMembrane);
+								setter(wrapped);
+								pos = targetObjects.push(target) - 1;
 								targetAttributes[pos] = {};
 							}
 							targetAttributes[pos][targetAttribute] = (handlers || {});
+							return wrapped;
 						} catch(ex) {
 							alert(ex);
 						}
 					};
-					firedog.__unobserve__ = function(getter, setter, targetAttribute) {
+					firedog.unobserve = function(wrappedObject, setter, targetAttribute) {
 						try {
-							var wrappee = Com.unwrap(getter());
+							var wrappee = Com.unwrap(wrappedObject);
 							if (wrappee) {
 								var pos = targetObjects.indexOf(wrappee);
 								if (pos > - 1) {
 									delete(targetAttributes[pos][targetAttribute]);
 								}
+							} else {
+								alert('Firedog: a wrapped object should be passed to firedog.unobserve.');
 							}
 						} catch(ex) {
 							alert(ex);
@@ -442,4 +472,3 @@ FBL.ns(function() {
 		Firebug.registerModule(Firebug.Firedog);
 	};
 });
-

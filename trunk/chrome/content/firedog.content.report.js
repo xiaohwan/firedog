@@ -144,7 +144,7 @@ var Content = (function() {
 					desc = desc.concat([p, ' => ', ifObjectId(obj.properties[p]) ? wrapObjectIdHtml(obj.properties[p]) : obj.properties[p] + '', '<br />']);
 				}
 			} else {
-				desc.push('No property of this object is profiled. It maybe because this type is not added to the list of "interested types.". You can add it by editing /content/memory-profiler-{version}/js/memory-profiler.trace.js in extension folder.');
+				desc.push('No property of this object is profiled. It maybe because this type "' + obj.nativeClass + '" is not added to the list of "interested types.". You can add it by editing /content/profiler.js in extension folder.');
 			}
 			if (!obj.allProps) {
 				obj.allProps = getAllProperties(obj.prototype);
