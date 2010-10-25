@@ -25,7 +25,7 @@ ul {
 
 #hierachey {
 	padding: 8px;
-	width: 300px;
+	width: 400px;
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -58,8 +58,9 @@ ul {
 	left: 420px;
 	right: 0;
 	bottom: 0;
+	overflow-y: auto;
 }
-#detail > div {
+#detail div.ui-tabs-panel {
 	overflow: auto;
 }
 #detail h4 {
