@@ -147,6 +147,7 @@ FBL.ns(function() {
 				}
 			},
 			destroyContext: function(context, persistedState) {
+				panels.splice(contexts.indexOf(context), 1);
 				snapshots.splice(contexts.indexOf(context), 1);
 				contexts.splice(contexts.indexOf(context), 1);
 			},
@@ -351,12 +352,14 @@ FBL.ns(function() {
 		FiredogPanel.prototype = extend(Firebug.Panel, {
 			name: 'Firedog',
 			title: 'Firedog',
+			getIndex: function() {
+				return contexts.indexOf(this.context);
+			},
 			initialize: function() {
 				try {
 					Firebug.Panel.initialize.apply(this, arguments);
 					// NOTE:
-					this.index = contexts.indexOf(this.context);
-					panels[this.index] = this;
+					panels[this.getIndex()] = this;
 					// NOTE:
 					this.menu1 = $('fdSnapshotMenu');
 					this.menu2 = $('fdCompareToMenu');
@@ -368,18 +371,21 @@ FBL.ns(function() {
 					this.chk = $('fdCompareCheck');
 					this.compare = $('fdCompare');
 
+					this.compareChecked = false;
+
 					// NOTE: to improve ...
 					var me = this;
 					Content(this.panelNode, function(content) {
 						me.content = content;
-						me.content.model = me.model;
-						me.content.panelIndex = me.index;
 					});
 				} catch(ex) {
 					alert(ex);
 				}
 			},
 			toggleCompareToMenuEnabled: function() {
+				// NOTE: all panels share the same toolbar, so ... we need record UI status of toolbar in panel instance;
+				this.compareChecked = !this.compareChecked;
+
 				this.menu2.disabled = ! this.menu2.disabled;
 				this.compare.disabled = ! this.compare.disabled;
 			},
@@ -394,12 +400,12 @@ FBL.ns(function() {
 				return [this.menu1.selectedIndex, this.menu2.selectedIndex, this.identifier.value];
 			},
 			onNewSnapshot: function() {
-				var items = snapshots[contexts.indexOf(this.context)];
+				var items = snapshots[this.getIndex()];
 				var neuu = items[items.length - 1];
 				this.content.setSnapshot(neuu);
 				this.updateSnapshotMenu();
 			},
-			updateSnapshotMenu: function(items) {
+			updateSnapshotMenu: function() {
 				var items = snapshots[contexts.indexOf(this.context)];
 				if (items && items.length) {
 					FBL.eraseNode(this.popup1);
@@ -419,9 +425,9 @@ FBL.ns(function() {
 					this.menu1.selectedIndex = len - 1;
 					if (items.length > 1) {
 						this.menu2.selectedIndex = len - 2;
-						this.chk.checked = false;
-						this.menu2.disabled = true;
-						this.compare.disabled = true;
+						this.chk.checked = this.compareChecked;
+						this.menu2.disabled = !this.compareChecked;
+						this.compare.disabled = !this.compareChecked;
 						collapse(this.comparePanel, false);
 					} else {
 						collapse(this.comparePanel, true);
