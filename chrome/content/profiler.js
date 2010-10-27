@@ -3,11 +3,14 @@ function doProfiling() {
 		'Object': true,
 		'Call': true,
 		'Function': true,
-		'Array': true
+		'Array': true,
+		'Window': true,
+		'Error': true
 	};
 	var windows = {};
 	var namedObjects = getNamedObjects();
 	var cross = true;
+	var parents = {};
 	for (var name in namedObjects) {
 		cross = false;
 		var id = namedObjects[name];
@@ -19,24 +22,62 @@ function doProfiling() {
 		if (info.innerObject) {
 			id = info.innerObject;
 		}
-		namedObjects[name] = id;
+		parents[id] = true;
 	}
-	for (var p in namedObjects) {
-		windows[namedObjects[p]] = true;
-	}
+	// NOTE: get parent id for all objects;
 	var table = getObjectTable();
-	var objs = {};
+	for (p in table) {
+		table[p] = getObjectParent(parseInt(p));
+	}
+	// NOTE: get all scopes (parent) in target window;
+	var ancestor = null;
+	var pc = null; // NOTE: parents chain (scopes chain);
+	var notparents = {};
+	var flag = false;
+
 	for (var p in table) {
-		var parent = getObjectParent(parseInt(p));
-		if (cross || (p in windows) || (parent in windows)) {
-			objs[p] = getObjectInfo(parseInt(p));
-			if (objs[p].nativeClass in interestClass) {
-				objs[p].properties = getObjectProperties(parseInt(p));
+		p = parseInt(p);
+		ancestor = table[p];
+		if (ancestor) {
+			if (!parents[ancestor] && !notparents[ancestor]) {
+				pc = {};
+				do {
+					pc[ancestor] = true;
+					ancestor = table[ancestor];
+					if (parents[ancestor]) {
+						for (var pp in pc) {
+							parents[pp] = true;
+						}
+						break;
+					} else if (!ancestor || (notparents[ancestor])) {
+						for (var pp in pc) {
+							notparents[pp] = true;
+						}
+						break;
+					}
+				} while (ancestor && (!pc[ancestor])); // NOTE: could scopes be a loop?
+				// TODO: scopes loop?
 			}
 		} else {
+			notparents[p] = true;
 		}
 	}
-	return objs;
+
+	// NOTE:
+	var objs = {};
+	for (p in table) {
+		p = parseInt(p);
+		if (cross || parents[p] || parents[table[p]]) {
+			objs[p] = getObjectInfo(p);
+			if (objs[p].nativeClass in interestClass) {
+				objs[p].properties = getObjectProperties(p);
+			}
+		} else {}
+	}
+	return {
+		data: objs,
+		info: parents
+	};
 }
 // This function uses the Python-inspired traceback functionality of the
 // profiling runtime to return a stack trace that looks much like Python's.
@@ -50,13 +91,14 @@ function getTraceback(frame) {
 	}
 	lines.splice(0, 0, "Traceback (most recent call last):");
 	return lines.join('\n');
-}
-(function() {
+} (function() {
 	var result;
 	try {
+		var r = doProfiling();
 		result = {
 			success: true,
-			data: doProfiling()
+			data: r.data,
+			info: r.info
 		};
 	} catch(e) {
 		result = {
@@ -67,3 +109,4 @@ function getTraceback(frame) {
 	}
 	return JSON.stringify(result);
 })();
+

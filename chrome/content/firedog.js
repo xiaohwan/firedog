@@ -194,10 +194,11 @@ FBL.ns(function() {
 
 				// NOTE: deserialize snapshots from disk cache;
 				snapshots = Snapshot.restore(readFile(CACHE_FILE));
-
+		
 				// NOTE: parse profiling results;
 				result = JSON.parse(result);
 				if (result.success) {
+					// alert(JSON.stringify(result.info));
 					// NOTE: push new results to snapshots collection;
 					var ss = snapshots[contexts.indexOf(context)];
 					ss.push(new Snapshot(ss.length, (ss.length + 1) + ' @ ' + startTime.toTimeString().split(' ')[0], result.data));

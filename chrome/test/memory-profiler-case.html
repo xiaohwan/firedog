@@ -4,9 +4,17 @@
 			Memory Profiler Test Case
 		</title>
 		<script>
+			var count = (function() {
+				var c = 0;
+				var objects_in_closure = [];
+				return function() {
+					objects_in_closure.push({c_in_closure:c++});
+				}
+			})();
 			var objs = [];
 			function addObject() {
 				objs.push({id: objs.length + '', d: new Date()});
+				count();
 			}
 		</script>
 	</head>
