@@ -198,7 +198,8 @@ FBL.ns(function() {
 				// NOTE: parse profiling results;
 				result = JSON.parse(result);
 				if (result.success) {
-					// alert(JSON.stringify(result.info));
+					// NOTE: pass debug info from profiler.js throught result.info, and show it by panel.showLog;
+					// panels[contexts.indexOf(context)].showLog(result.info);
 					// NOTE: push new results to snapshots collection;
 					var ss = snapshots[contexts.indexOf(context)];
 					ss.push(new Snapshot(ss.length, (ss.length + 1) + ' @ ' + startTime.toTimeString().split(' ')[0], result.data));
@@ -467,6 +468,9 @@ FBL.ns(function() {
 				} else {
 					collapse(this.menuPanel, true);
 				}
+			},
+			showLog: function(log) {
+				this.content.log(log);
 			}
 		});
 		Firebug.registerPanel(FiredogPanel);
