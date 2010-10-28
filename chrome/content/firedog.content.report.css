@@ -25,12 +25,12 @@ ul {
 
 #hierachey {
 	padding: 8px;
-	width: 400px;
+	width: 300px;
 	position: absolute;
 	top: 0;
 	left: 0;
 	bottom: 0;
-	right: 400px;
+	right: 300px;
 	overflow: auto;
 }
 #hierachey h3 {
@@ -55,7 +55,7 @@ ul {
 #detail {
 	position: absolute;
 	top: 0;
-	left: 420px;
+	left: 320px;
 	right: 200;
 	bottom: 0;
 	overflow-y: auto;
