@@ -4,8 +4,8 @@ function doProfiling() {
 		'Call': true,
 		'Function': true,
 		'Array': true,
-		'Window': true,
-		'Error': true
+		'Error': true,
+		'Window': true
 	};
 	var windows = {};
 	var namedObjects = getNamedObjects();
@@ -29,6 +29,7 @@ function doProfiling() {
 	for (p in table) {
 		table[p] = getObjectParent(parseInt(p));
 	}
+	/*
 	// NOTE: get all scopes (parent) in target window;
 	var ancestor = null;
 	var pc = null; // NOTE: parents chain (scopes chain);
@@ -62,6 +63,7 @@ function doProfiling() {
 			notparents[p] = true;
 		}
 	}
+	*/
 
 	// NOTE:
 	var objs = {};

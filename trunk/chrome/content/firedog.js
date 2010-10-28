@@ -142,7 +142,7 @@ FBL.ns(function() {
 			initContext: function(context, persistedState) {
 				Firebug.Module.initContext.apply(this, arguments);
 				try {
-					snapshots[contexts.length] = [];
+					snapshots[contexts.length] = [new Snapshot(-1, 'Blank', {})];
 					contexts.push(context);
 					this.initWatchdog();	// NOTE: setup firedog.observe, firedog.unobserve;
 					this.injectFiredog(context);	// NOTE: inject firedog to client window;
@@ -199,7 +199,7 @@ FBL.ns(function() {
 				result = JSON.parse(result);
 				if (result.success) {
 					// NOTE: pass debug info from profiler.js throught result.info, and show it by panel.showLog;
-					// panels[contexts.indexOf(context)].showLog(result.info);
+					panels[contexts.indexOf(context)].showLog(result.info);
 					// NOTE: push new results to snapshots collection;
 					var ss = snapshots[contexts.indexOf(context)];
 					ss.push(new Snapshot(ss.length, (ss.length + 1) + ' @ ' + startTime.toTimeString().split(' ')[0], result.data));
