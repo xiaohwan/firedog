@@ -1,5 +1,6 @@
 var Content = (function() {
 	const LENGTH_TO_CONFIRM = 20;
+	const MAX_TAB_NUM = 10;
 
 	var hierachey = null;
 	var detail = null;
@@ -168,21 +169,21 @@ var Content = (function() {
 
 	// NOTE: show object detail by a jquery tab;
 	function showObjectDetail(id) {
-		if ($('#detail > ul > li').size() > 9) {
-			alert('You can view details of 10 objects at a time. Please close some tabs.');
-		} else {
-			if (!$('#tab-' + id).size()) {
+		if (!$('#tab-' + id).size()) {
+			if ($('#detail > ul > li').size() >= MAX_TAB_NUM) {
+				alert('You can view details of 10 objects at a time. Please close some tabs.');
+			} else {
 				var obj = searchById(id);
 				var html = getObjectDescription(obj);
 				$(html).appendTo('#detail');
 				$('#detail').tabs('add', '#tab-' + id, id, 0);
 				$('#detail').tabs('select', 0);
-			} else {
-				var li = $('a[href=#tab-' + id + ']').parent();
-				var lis = li.parent().children();
-				var index = lis.index(li);
-				$('#detail').tabs('select', index);
 			}
+		} else {
+			var li = $('a[href=#tab-' + id + ']').parent();
+			var lis = li.parent().children();
+			var index = lis.index(li);
+			$('#detail').tabs('select', index);
 		}
 	}
 
@@ -256,6 +257,12 @@ var Content = (function() {
 		},
 		setSnapshot: function(s) {
 			snapshot = s;
+		},
+		log: function(log) {
+			if (typeof(log) == 'object') {
+				log = JSON.stringify(log);
+			}
+			$('#log').text(log);
 		}
 	};
 })();

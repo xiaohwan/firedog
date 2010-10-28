@@ -8,7 +8,7 @@
 				var c = 0;
 				var objects_in_closure = [];
 				return function() {
-					objects_in_closure.push({c_in_closure:c++});
+					objects_in_closure.push({id:c++ + ''});
 				}
 			})();
 			var objs = [];
