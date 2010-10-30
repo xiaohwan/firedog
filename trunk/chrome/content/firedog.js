@@ -177,8 +177,8 @@ FBL.ns(function() {
 				// NOTE: cache snapshots by disk file and remove objects in snapshots from JS context
 				//       in case of objects in snapshots are profiled again.
 				writeFile(CACHE_FILE, snapshots);
-				snapshots = null;
-
+				snapshots = null;			// NOTE: remove references of all object used in profiler;
+											//       MAKE SURE no other reference to snapshots objects;
 				// NOTE: force GC;
 				Components.utils.forceGC();
 
@@ -188,8 +188,7 @@ FBL.ns(function() {
 				// NOTE: nsJetpack.profileMemory(code, filename, lineNumber, namedObjects, argument);
 				//       set http://hg.mozilla.org/labs/jetpack-sdk/file/tip/packages/nsjetpack/docs/nsjetpack.md
 				var targetWindow = unwrapObject(context.window);
-				var result = Com.profileMemory(PROFILE_CODE, PROFILE_FILE, 1, [targetWindow]);
-
+				var result = Com.profileMemory(PROFILE_CODE, PROFILE_FILE, 1, [targetWindow], JSON.stringify({PROFILE_CLOSURE: true, PROFILE_PROPERTY: true, INTERESTED_TYPES: {'Array': true, 'Object': true, 'Function': true, 'Window': true, 'Error': true, 'Call': true}}));
 				var totalTime = (new Date()) - startTime;
 
 				// NOTE: deserialize snapshots from disk cache;
@@ -249,8 +248,8 @@ FBL.ns(function() {
 					var panel = panels[contexts.indexOf(context)];
 					var info = panel.getCompareSetup();
 					var _snapshots = snapshots[contexts.indexOf(context)];
-					snapshot1 = _snapshots[info[1]].data;
-					snapshot2 = _snapshots[info[0]].data;
+					var snapshot1 = _snapshots[info[1]].data;
+					var snapshot2 = _snapshots[info[0]].data;
 					panel.showCompareResults(this.compareSnapshots(snapshot1, snapshot2, info[2]));
 				} catch(ex) {
 					alert(ex);
@@ -409,6 +408,7 @@ FBL.ns(function() {
 					var me = this;
 					Content(this.panelNode, function(content) {
 						me.content = content;
+						content.panel = me;
 					});
 				} catch(ex) {
 					alert(ex);
@@ -431,10 +431,15 @@ FBL.ns(function() {
 				// TODO:
 				return [this.menu1.selectedIndex, this.menu2.selectedIndex, this.identifier.value];
 			},
+			// NOTE: get a single snapshot of current panel, used by html UI;
+			getSnapshot: function(index) {
+				return snapshots[this.getIndex()][index];
+			},
 			onNewSnapshot: function() {
 				var items = snapshots[this.getIndex()];
-				var neuu = items[items.length - 1];
-				this.content.setSnapshot(neuu);
+				// TODO: here extra reference to snapshot. it's passed to jQueryUI and saved there and will be profiled
+				//       in next snapshot;
+				this.content.setSnapshot(items.length - 1);
 				this.updateSnapshotMenu();
 			},
 			updateSnapshotMenu: function() {

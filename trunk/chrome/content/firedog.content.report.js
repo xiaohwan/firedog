@@ -43,6 +43,10 @@ var Content = (function() {
 		}
 	}
 
+	function getSnapshot() {
+		return Content.panel.getSnapshot(snapshot);
+	}
+
 	function getObjectName(obj) {
 		var name = obj.id + ' ' + obj.nativeClass;
 		// TODO: select decorator automatically by properties;
@@ -74,7 +78,7 @@ var Content = (function() {
 	}
 
 	function searchById(id) {
-		var profile = snapshot.data;
+		var profile = getSnapshot().data;
 		return profile[id];
 	}
 
@@ -102,7 +106,7 @@ var Content = (function() {
 	//       property of A);
 	function searchObjectsByChildren(child) {
 		try {
-			var profile = snapshot.data;
+			var profile = getSnapshot().data;
 			child = parseInt(child);
 			var objs = [];
 			for (var p in profile) {
@@ -132,7 +136,7 @@ var Content = (function() {
 		}
 	}
 	function ifObjectId(str) {
-		return str in snapshot.data;
+		return str in getSnapshot().data;
 	}
 
 	// NOTE: get object detail html;
