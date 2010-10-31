@@ -1,0 +1,47 @@
+<html>
+	<head>
+		<title>
+			Object Observer Test Case
+		</title>
+		<script>
+			var arr = [];
+			function addObject() {
+				try {
+					arr.push('item');
+					arr.__len = arr.length;
+					delete(arr.__len);
+				} catch(ex) {
+					alert(ex);
+				}
+			}
+
+			try {
+				// NOTE: observe(target, setter, attr, handlers);
+				// NOTE: now only set and delete is supported, but will add get/add if see necessary;
+				// NOTE: use setter to access to target object, because we need replace the original object with wrapped object;
+				//       getter isn't necessary since we can hold wrappee and wrapped in observer code;
+				// NOTE: handlers {onSet, onDelete};
+				// NOTE: onSet(value, new_value, stack);
+				// NOTE: onDelete(value, stack);
+				// NOTE: if handler is not provided, a default handle will work instead;
+				firedog.observe(arr, function(obj){
+					window.arr = obj;
+				}, '__len', {onSet: function(oldv, newv, stack){
+				// TODO: you can also see call stack from firebug stack panel;
+					debugger;
+				}, onDelete: function(value, stack){
+					debugger;
+				}});
+			} catch(ex) {
+				alert('err');
+				alert(ex);
+			}
+		</script>
+	</head>
+	<body>
+		<input type="button" value="Change property value" onclick="javascript:addObject();"/>
+		<h1>Instr</h1>
+		<p>By clicking the button "Change property value", a property value of object "arr" will be changed and then deleted.</p>
+		<p>two custom handlers will be invoked on these actions.</p>
+	</body>
+</html>

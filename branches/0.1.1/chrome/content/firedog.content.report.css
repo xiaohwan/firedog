@@ -1,0 +1,77 @@
+* {
+	padding: 0;
+	margin: 0;
+	font-weight: normal;
+	font-family: arial;
+}
+body {
+	font-size: 8pt;
+}
+ul {
+	list-style: none;
+}
+.box {
+	position: relative;
+}
+.link {
+	text-decoration: underline;
+	cursor: pointer;
+}
+.link:hover {
+}
+.hide {
+	display: none;
+}
+
+#hierachey {
+	padding: 8px;
+	width: 300px;
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 300px;
+	overflow: auto;
+}
+#hierachey h3 {
+	background: url('chrome://firebug/skin/win/twistyClosed.png');
+	background-position: 3px 2px;
+	background-repeat: no-repeat;
+}
+#hierachey h3.open {
+	background-image: url('chrome://firebug/skin/win/twistyOpen.png');
+}
+#hierachey h3.active > span.object-name {
+	background-color: green;
+}
+#hierachey h3 > span.open-icon {
+	display: inline-block;
+	width: 14px;
+	height: 12px;
+}
+#hierachey ul.ref-list {
+	padding-left: 14px;
+}
+#detail {
+	position: absolute;
+	top: 0;
+	left: 320px;
+	right: 200;
+	bottom: 0;
+	overflow-y: auto;
+}
+#detail div.ui-tabs-panel {
+	overflow: auto;
+}
+#detail h4 {
+	font-weight: bold;
+	margin: 5px 0;
+}
+#log {
+	position: absolute;
+	right: 0;
+	width: 200px;
+	top: 0;
+	bottom: 0;
+	overflow-y: auto;
+}
