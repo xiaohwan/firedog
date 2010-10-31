@@ -3,7 +3,7 @@
 	xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 	<Description about="urn:mozilla:install-manifest">
 		<em:id>firedog@lab.nuttycoder.com</em:id>
-		<em:version>0.0.1</em:version>
+		<em:version>0.1.1</em:version>
 
 		<!-- Firefox -->
 		<em:targetApplication>
@@ -16,7 +16,7 @@
 
 		<!-- Firedog -->
 		<em:name>Firedog</em:name>
-		<em:description>Firebug Watchdog Extension</em:description>
+		<em:description>Firebug Extension including Object Observer and Memory Profiler</em:description>
 		<em:creator>Xiaoxing Wang</em:creator>
 		<em:homepageURL>http://lab.nuttycoder.com</em:homepageURL>
 	</Description>
