@@ -142,7 +142,7 @@ var Content = (function() {
 	// NOTE: get object detail html;
 	function getObjectDescription(obj) {
 		if (typeof(obj) == 'object') {
-			var desc = ['<h4>Basic Info</h4>', 'nativeClass: ', obj.nativeClass, '<br />', 'parent: ', wrapObjectIdHtml(obj.parent), '<br />', 'prototype: ', wrapObjectIdHtml(obj.prototype), '<br />', 'children: ', wrapObjectIdHtml(obj.children)];
+			var desc = ['<h4>Basic Info</h4>', 'Native Class: ', obj.nativeClass, '<br />', 'Scope: ', wrapObjectIdHtml(obj.parent), '<br />', 'Prototype: ', wrapObjectIdHtml(obj.prototype), '<br />', 'Refering: ', wrapObjectIdHtml(obj.children)];
 			desc.push('<h4>Properties</h4>');
 			if (obj.properties) {
 				for (var p in obj.properties) {

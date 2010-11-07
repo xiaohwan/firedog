@@ -156,10 +156,8 @@ FBL.ns(function() {
 				try {
 					var isFdPanel = panel && (panel.name == PANEL);
 					var fdButtons = browser.chrome.$('fbFiredogButtons');
-					panel.model = this;
 					if (isFdPanel) {
 						collapse(fdButtons, false);
-						panel.updateSnapshotMenu();
 					} else {
 						collapse(fdButtons, true);
 					}
@@ -391,16 +389,6 @@ FBL.ns(function() {
 					Firebug.Panel.initialize.apply(this, arguments);
 					// NOTE:
 					panels[this.getIndex()] = this;
-					// NOTE:
-					this.menu1 = $('fdSnapshotMenu');
-					this.menu2 = $('fdCompareToMenu');
-					this.popup1 = $('fdSnapshotMenuPopup');
-					this.popup2 = $('fdCompareToMenuPopup');
-					this.identifier = $('fdIdentifierProperty');
-					this.menuPanel = $('fdSnapshotMenuPanel');
-					this.comparePanel = $('fdCompareMenuPanel');
-					this.chk = $('fdCompareCheck');
-					this.compare = $('fdCompare');
 
 					this.compareChecked = false;
 
@@ -413,6 +401,31 @@ FBL.ns(function() {
 				} catch(ex) {
 					alert(ex);
 				}
+			},
+			show: function(state) {
+				try {
+					Firebug.Panel.show.apply(this, arguments);
+					this.showToolbarButtons('fbFiredogButtons', true);
+
+					// NOTE:
+					this.menu1 = $('fdSnapshotMenu');
+					this.menu2 = $('fdCompareToMenu');
+					this.popup1 = $('fdSnapshotMenuPopup');
+					this.popup2 = $('fdCompareToMenuPopup');
+					this.identifier = $('fdIdentifierProperty');
+					this.menuPanel = $('fdSnapshotMenuPanel');
+					this.comparePanel = $('fdCompareMenuPanel');
+					this.chk = $('fdCompareCheck');
+					this.compare = $('fdCompare');
+
+					this.updateSnapshotMenu();
+				} catch(ex) {
+					alert(ex);
+				}
+			},
+			hide: function(state) {
+				Firebug.Panel.show.apply(this, arguments);
+				this.showToolbarButtons('fbFiredogButtons', false);
 			},
 			toggleCompareToMenuEnabled: function() {
 				// NOTE: all panels share the same toolbar, so ... we need record UI status of toolbar in panel instance;

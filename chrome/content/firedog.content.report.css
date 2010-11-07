@@ -69,9 +69,11 @@ ul {
 }
 #log {
 	position: absolute;
+	padding: 4px;
 	right: 0;
-	width: 200px;
+	width: 192px;
 	top: 0;
 	bottom: 0;
 	overflow-y: auto;
+	word-wrap: break-word;
 }
