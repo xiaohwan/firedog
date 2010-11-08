@@ -7,10 +7,10 @@ FBL.ns(function() {
 	const Cu = Components.utils;
 
 	const EXTENSION_ID = 'firedog@lab.nuttycoder.com';
-	const PROFILE_FILE_NAME = 'profiler.js';	// NOTE: code for profiling; 
-												//       see http://hg.mozilla.org/labs/jetpack-sdk/file/tip/packages/nsjetpack/docs/nsjetpack.md
-	const CACHE_FILE_NAME = 'snapshots.tmp';	// NOTE: I'm using a cache file to save serialized snapshots before take another snapshot
-												//       because those snapshots objects could be also profiled;
+	const PROFILE_FILE_NAME = 'profiler.js'; // NOTE: code for profiling; 
+	//       see http://hg.mozilla.org/labs/jetpack-sdk/file/tip/packages/nsjetpack/docs/nsjetpack.md
+	const CACHE_FILE_NAME = 'snapshots.tmp'; // NOTE: I'm using a cache file to save serialized snapshots before take another snapshot
+	//       because those snapshots objects could be also profiled;
 	const EXT_MANAGER = Cc['@mozilla.org/extensions/manager;1'].getService(Components.interfaces.nsIExtensionManager);
 	const LOC = EXT_MANAGER.getInstallLocation(EXTENSION_ID);
 	// NOTE:
@@ -127,8 +127,8 @@ FBL.ns(function() {
 	const PROFILE_CODE = readFile(PROFILE_FILE);
 	const Com = getBinaryComponent();
 	/*** initialize ***/
-	var ERRS = [];			// NOTE: cache exceptions in a collection of errors because string can't display in the initialize process of module;
-	var firedog = {};		// NOTE: the object I injected to client window; {observe, unobserve, profile(todo)};
+	var ERRS = []; // NOTE: cache exceptions in a collection of errors because string can't display in the initialize process of module;
+	var firedog = {}; // NOTE: the object I injected to client window; {observe, unobserve, profile(todo)};
 	// NOTE: relationship between snapshots and contexts and panels are based the same index in these array:
 	//       context of panels[index] is contexts[index];
 	//       snapshots of contexts[index] is snapshots[index] which is an array with all snapshots;
@@ -142,10 +142,10 @@ FBL.ns(function() {
 			initContext: function(context, persistedState) {
 				Firebug.Module.initContext.apply(this, arguments);
 				try {
-					snapshots[contexts.length] = [new Snapshot(-1, 'Blank', {})];
+					snapshots[contexts.length] = [new Snapshot( - 1, 'Blank', {})];
 					contexts.push(context);
-					this.initWatchdog();	// NOTE: setup firedog.observe, firedog.unobserve;
-					this.injectFiredog(context);	// NOTE: inject firedog to client window;
+					this.initWatchdog(); // NOTE: setup firedog.observe, firedog.unobserve;
+					this.injectFiredog(context); // NOTE: inject firedog to client window;
 				} catch(ex) {
 					ERRS.push(ex);
 				}
@@ -175,8 +175,8 @@ FBL.ns(function() {
 				// NOTE: cache snapshots by disk file and remove objects in snapshots from JS context
 				//       in case of objects in snapshots are profiled again.
 				writeFile(CACHE_FILE, snapshots);
-				snapshots = null;			// NOTE: remove references of all object used in profiler;
-											//       MAKE SURE no other reference to snapshots objects;
+				snapshots = null; // NOTE: remove references of all object used in profiler;
+				//       MAKE SURE no other reference to snapshots objects;
 				// NOTE: force GC;
 				Components.utils.forceGC();
 
@@ -187,12 +187,23 @@ FBL.ns(function() {
 				//       set http://hg.mozilla.org/labs/jetpack-sdk/file/tip/packages/nsjetpack/docs/nsjetpack.md
 				var targetWindow = unwrapObject(context.window);
 				Cu.forceGC();
-				var result = Com.profileMemory(PROFILE_CODE, PROFILE_FILE, 1, [targetWindow], JSON.stringify({PROFILE_CLOSURE: true, PROFILE_PROPERTY: true, INTERESTED_TYPES: {'Array': true, 'Object': true, 'Function': true, 'Window': true, 'Error': true, 'Call': true}}));
+				var result = Com.profileMemory(PROFILE_CODE, PROFILE_FILE, 1, [targetWindow], JSON.stringify({
+					PROFILE_CLOSURE: true,
+					PROFILE_PROPERTY: true,
+					INTERESTED_TYPES: {
+						'Array': true,
+						'Object': true,
+						'Function': true,
+						'Window': true,
+						'Error': true,
+						'Call': true
+					}
+				}));
 				var totalTime = (new Date()) - startTime;
 
 				// NOTE: deserialize snapshots from disk cache;
 				snapshots = Snapshot.restore(readFile(CACHE_FILE));
-		
+
 				// NOTE: parse profiling results;
 				result = JSON.parse(result);
 				if (result.success) {
@@ -258,9 +269,36 @@ FBL.ns(function() {
 			initWatchdog: function() {
 				try {
 					var targetObjects = [];
+					var wrappedObjects = [];
 					var targetAttributes = [];
 					var targetAttributeHandlers = [];
 					var resolving = false;
+
+					var invokeHandler = function(handler, wrappee, wrapped, attr, value) {
+						if (!resolving) {
+							try {
+								var pos = targetObjects.indexOf(wrappee);
+								// NOTE: object is in target list;
+								if (pos > - 1) {
+									// NOTE: attribute is observed;
+									if (targetAttributes[pos].indexOf(attr) > - 1) {
+										if (targetAttributeHandlers[pos][attr][handler]) {
+											var rtn = targetAttributeHandlers[pos][attr][handler](wrappee[attr], value, getCallStack());
+											if (rtn !== undefined) {
+												value = rtn;
+											}
+										} else {
+											// NOTE: default callback;
+											alert([handler, ' is invoked on attrbuite \'', attr, '\'.\ncall stack: \n', getCallStack(), 'You can overwrite the default behavior of ', handler, ' handler when observe object.'].join(''));
+										}
+									}
+								}
+							} catch(ex) {
+								alert(ex);
+							}
+						}
+						return value === undefined ? true: value;
+					};
 
 					// NOTE: attrMembrane include the additional methods we add to a wrapped object;
 					//       see http://hg.mozilla.org/labs/jetpack-sdk/file/tip/packages/nsjetpack/docs/nsjetpack.md for details;
@@ -285,106 +323,25 @@ FBL.ns(function() {
 							return Iterator(wrappee, keysOnly);
 						},
 						getProperty: function(wrappee, wrapped, attr, value) {
-							if (!resolving) {
-								try {
-									var pos = targetObjects.indexOf(wrappee);
-									if (pos > - 1) {
-										if (targetAttributes[pos].indexOf(attr) > -1) {
-											if (targetAttributeHandlers[pos][attr].onGet) {
-												if (targetAttributeHandlers[pos][attr].onGet(value, getCallStack()) === false) {
-													return false;
-												}
-											} else {
-												// NOTE: default callback;
-												alert(attr + ' is get as ' + value + '.\n(You can overwrite this default callback by adding "onSet" property in the forth parameter when setup observer.)');
-												alert('call stack: \n' + getCallStack());
-											}
-										}
-									}
-								} catch(ex) {
-									alert(ex);
-								}
-							} 
-							return value;
+							return invokeHandler('onGet', wrappee, wrapped, attr, value);
 						},
 						addProperty: function(wrappee, wrapped, attr, value) {
-							if (!resolving) {
-								try {
-									var pos = targetObjects.indexOf(wrappee);
-									if (pos > - 1) {
-										if (targetAttributes[pos].indexOf(attr) > -1) {
-											if (targetAttributeHandlers[pos][attr].onAdd) {
-												if (targetAttributeHandlers[pos][attr].onAdd(value, getCallStack()) === false) {
-													return false;
-												}
-											} else {
-												// NOTE: default callback;
-												alert(attr + ' is add as ' + value + '.\n(You can overwrite this default callback by adding "onSet" property in the forth parameter when setup observer.)');
-												alert('call stack: \n' + getCallStack());
-											}
-										}
-									}
-									wrappee[attr] = value;
-								} catch(ex) {
-									alert(ex);
-								}
-							}
-							return value;
+							return invokeHandler('onAdd', wrappee, wrapped, attr, value);
 						},
 						setProperty: function(wrappee, wrapped, attr, value) {
-							if (!resolving) {
-								try {
-									var pos = targetObjects.indexOf(wrappee);
-									if (pos > - 1) {
-										if (targetAttributes[pos].indexOf(attr) > -1) {
-											if (targetAttributeHandlers[pos][attr].onSet) {
-												if (targetAttributeHandlers[pos][attr].onSet(wrappee[attr], value, getCallStack()) === false) {
-													return wrappee[attr];
-												}
-											} else {
-												// NOTE: default callback;
-												alert(attr + ' is set to ' + value + '.\n(You can overwrite this default callback by adding "onSet" property in the forth parameter when setup observer.)');
-												alert('call stack: \n' + getCallStack());
-											}
-										}
-									}
-								} catch(ex) {
-									alert(ex);
-								}
-								wrappee[attr] = value;
-							}
-							return value;
+							wrappee[attr] = invokeHandler('onSet', wrappee, wrapped, attr, value);
+							return wrappee[attr];
 						},
 						delProperty: function(wrappee, wrapped, attr) {
-							try {
-								var pos = targetObjects.indexOf(wrappee);
-								if (pos > - 1) {
-									if (targetAttributes[pos].indexOf(attr) > -1) {
-										if (targetAttributeHandlers[pos][attr].onDelete) {
-											if (targetAttributeHandlers[pos][attr].onDelete(wrappee[attr], getCallStack()) === false) {
-												return false;
-											}
-										} else {
-											// NOTE: default callback;
-											alert(attr + ' is deleted. \n(You can overwrite this default callback by adding "onSet" property in the forth parameter when setup observer.)');
-											alert('call stack: \n' + getCallStack());
-										}
-									}
-								}
-							} catch(ex) {
-								alert(ex);
-							}
-							delete(wrappee[attr]);
-							return true;
+							return invokeHandler('onDelete', wrappee, wrapped, attr);
 						}
 					};
 					// NOTE: observe;
-					firedog.observe = function(target, setter, targetAttribute, handlers) {
+					firedog.observe = function(target, targetAttribute, handlers) {
 						try {
 							var pos = targetObjects.indexOf(target);
 							if (pos == - 1) {
-								var wrapped = Com.wrap(target, attrMembrane);
-								setter(wrapped);
+								wrappedObjects.push(Com.wrap(target, attrMembrane));
 								pos = targetObjects.push(target) - 1;
 								targetAttributes[pos] = [];
 								targetAttributeHandlers[pos] = {};
@@ -393,18 +350,32 @@ FBL.ns(function() {
 							//       to avoid build-in attributes (like constructor, toString in targetAttributeHandlers;
 							targetAttributes[pos].push(targetAttribute);
 							targetAttributeHandlers[pos][targetAttribute] = (handlers || {});
-							return wrapped;
+							return wrappedObjects[pos];
 						} catch(ex) {
 							alert(ex);
 						}
 					};
-					firedog.unobserve = function(wrappedObject, setter, targetAttribute) {
+					// NOTE: unobserve;
+					firedog.unobserve = function(wrapped, attr) {
 						try {
-							var wrappee = Com.unwrap(wrappedObject);
+							var wrappee = Com.unwrap(wrapped);
 							if (wrappee) {
 								var pos = targetObjects.indexOf(wrappee);
 								if (pos > - 1) {
-									delete(targetAttributes[pos][targetAttribute]);
+									pos = targetAttributes[pos].indexOf(attr);
+									if (pos > - 1) {
+										targetAttributes[pos].splice(pos, 1);
+										delete(targetAttributeHandlers[pos][attr]);
+										if (targetAttributes[pos].length) {
+											return wrapped;
+										} else {
+											return wrappee;
+										}
+									} else {
+										alert('Firedog: the attribute hasn\'t been observed or has already been unobserved.');
+									}
+								} else {
+									alert('Firedog: the object hasn\'t been observed.');
 								}
 							} else {
 								alert('Firedog: a wrapped object should be passed to firedog.unobserve.');
@@ -479,7 +450,7 @@ FBL.ns(function() {
 			},
 			toggleCompareToMenuEnabled: function() {
 				// NOTE: all panels share the same toolbar, so ... we need record UI status of toolbar in panel instance;
-				this.compareChecked = !this.compareChecked;
+				this.compareChecked = ! this.compareChecked;
 
 				this.menu2.disabled = ! this.menu2.disabled;
 				this.compare.disabled = ! this.compare.disabled;
@@ -526,8 +497,8 @@ FBL.ns(function() {
 					if (items.length > 1) {
 						this.menu2.selectedIndex = len - 2;
 						this.chk.checked = this.compareChecked;
-						this.menu2.disabled = !this.compareChecked;
-						this.compare.disabled = !this.compareChecked;
+						this.menu2.disabled = ! this.compareChecked;
+						this.compare.disabled = ! this.compareChecked;
 						collapse(this.comparePanel, false);
 					} else {
 						collapse(this.comparePanel, true);

@@ -26,20 +26,17 @@
 				// NOTE: onSet(value, new_value, stack);
 				// NOTE: onDelete(value, stack);
 				// NOTE: if handler is not provided, a default handle will work instead;
-				firedog.observe(arr, function(obj){
-					window.arr = obj;
-				}, '__len', {onSet: function(oldv, newv, stack){
+				window.arr = firedog.observe(arr, '__len', {onSet: function(ov, nv, stack){
 				// TODO: you can also see call stack from firebug stack panel;
 					debugger;
-				}, onDelete: function(value, stack){
+				}, onDelete: function(ov, nv, stack){
 					debugger;
-				}, onAdd: function(value, stack) {
+				}, onAdd: function(ov, nv, stack) {
 					debugger;
-				}, onGet: function(value, stack) {
+				}, onGet: function(ov, nv, stack) {
 					debugger;
 				}});
 			} catch(ex) {
-				alert('err');
 				alert(ex);
 			}
 		</script>
