@@ -186,6 +186,7 @@ FBL.ns(function() {
 				// NOTE: nsJetpack.profileMemory(code, filename, lineNumber, namedObjects, argument);
 				//       set http://hg.mozilla.org/labs/jetpack-sdk/file/tip/packages/nsjetpack/docs/nsjetpack.md
 				var targetWindow = unwrapObject(context.window);
+				Cu.forceGC();
 				var result = Com.profileMemory(PROFILE_CODE, PROFILE_FILE, 1, [targetWindow], JSON.stringify({PROFILE_CLOSURE: true, PROFILE_PROPERTY: true, INTERESTED_TYPES: {'Array': true, 'Object': true, 'Function': true, 'Window': true, 'Error': true, 'Call': true}}));
 				var totalTime = (new Date()) - startTime;
 
@@ -258,6 +259,7 @@ FBL.ns(function() {
 				try {
 					var targetObjects = [];
 					var targetAttributes = [];
+					var targetAttributeHandlers = [];
 					var resolving = false;
 
 					// NOTE: attrMembrane include the additional methods we add to a wrapped object;
@@ -282,17 +284,61 @@ FBL.ns(function() {
 						iteratorObject: function(wrappee, wrapped, keysOnly) {
 							return Iterator(wrappee, keysOnly);
 						},
-						getProperty: function(wrappee, wrapped, attr, def) {
-							return def;
+						getProperty: function(wrappee, wrapped, attr, value) {
+							if (!resolving) {
+								try {
+									var pos = targetObjects.indexOf(wrappee);
+									if (pos > - 1) {
+										if (targetAttributes[pos].indexOf(attr) > -1) {
+											if (targetAttributeHandlers[pos][attr].onGet) {
+												if (targetAttributeHandlers[pos][attr].onGet(value, getCallStack()) === false) {
+													return false;
+												}
+											} else {
+												// NOTE: default callback;
+												alert(attr + ' is get as ' + value + '.\n(You can overwrite this default callback by adding "onSet" property in the forth parameter when setup observer.)');
+												alert('call stack: \n' + getCallStack());
+											}
+										}
+									}
+								} catch(ex) {
+									alert(ex);
+								}
+							} 
+							return value;
+						},
+						addProperty: function(wrappee, wrapped, attr, value) {
+							if (!resolving) {
+								try {
+									var pos = targetObjects.indexOf(wrappee);
+									if (pos > - 1) {
+										if (targetAttributes[pos].indexOf(attr) > -1) {
+											if (targetAttributeHandlers[pos][attr].onAdd) {
+												if (targetAttributeHandlers[pos][attr].onAdd(value, getCallStack()) === false) {
+													return false;
+												}
+											} else {
+												// NOTE: default callback;
+												alert(attr + ' is add as ' + value + '.\n(You can overwrite this default callback by adding "onSet" property in the forth parameter when setup observer.)');
+												alert('call stack: \n' + getCallStack());
+											}
+										}
+									}
+									wrappee[attr] = value;
+								} catch(ex) {
+									alert(ex);
+								}
+							}
+							return value;
 						},
 						setProperty: function(wrappee, wrapped, attr, value) {
 							if (!resolving) {
 								try {
 									var pos = targetObjects.indexOf(wrappee);
 									if (pos > - 1) {
-										if (attr in targetAttributes[pos]) {
-											if (targetAttributes[pos][attr].onSet) {
-												if (targetAttributes[pos][attr].onSet(wrappee[attr], value, getCallStack()) === false) {
+										if (targetAttributes[pos].indexOf(attr) > -1) {
+											if (targetAttributeHandlers[pos][attr].onSet) {
+												if (targetAttributeHandlers[pos][attr].onSet(wrappee[attr], value, getCallStack()) === false) {
 													return wrappee[attr];
 												}
 											} else {
@@ -313,9 +359,9 @@ FBL.ns(function() {
 							try {
 								var pos = targetObjects.indexOf(wrappee);
 								if (pos > - 1) {
-									if (attr in targetAttributes[pos]) {
-										if (targetAttributes[pos][attr].onDelete) {
-											if (targetAttributes[pos][attr].onDelete(wrappee[attr], getCallStack()) === false) {
+									if (targetAttributes[pos].indexOf(attr) > -1) {
+										if (targetAttributeHandlers[pos][attr].onDelete) {
+											if (targetAttributeHandlers[pos][attr].onDelete(wrappee[attr], getCallStack()) === false) {
 												return false;
 											}
 										} else {
@@ -340,9 +386,13 @@ FBL.ns(function() {
 								var wrapped = Com.wrap(target, attrMembrane);
 								setter(wrapped);
 								pos = targetObjects.push(target) - 1;
-								targetAttributes[pos] = {};
+								targetAttributes[pos] = [];
+								targetAttributeHandlers[pos] = {};
 							}
-							targetAttributes[pos][targetAttribute] = (handlers || {});
+							// NOTE: use a separated array to record all observed attributes
+							//       to avoid build-in attributes (like constructor, toString in targetAttributeHandlers;
+							targetAttributes[pos].push(targetAttribute);
+							targetAttributeHandlers[pos][targetAttribute] = (handlers || {});
 							return wrapped;
 						} catch(ex) {
 							alert(ex);

@@ -6,9 +6,11 @@
 		<script>
 			var arr = [];
 			function addObject() {
+				var t = null;
 				try {
 					arr.push('item');
 					arr.__len = arr.length;
+					t = arr.__len;
 					delete(arr.__len);
 				} catch(ex) {
 					alert(ex);
@@ -30,6 +32,10 @@
 				// TODO: you can also see call stack from firebug stack panel;
 					debugger;
 				}, onDelete: function(value, stack){
+					debugger;
+				}, onAdd: function(value, stack) {
+					debugger;
+				}, onGet: function(value, stack) {
 					debugger;
 				}});
 			} catch(ex) {
