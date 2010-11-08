@@ -1,0 +1,2 @@
+content firedog chrome/content/
+overlay chrome://firebug/content/firebugOverlay.xul chrome://firedog/content/firedog.xul

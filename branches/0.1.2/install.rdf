@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+	xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+	<Description about="urn:mozilla:install-manifest">
+		<em:id>firedog@lab.nuttycoder.com</em:id>
+		<em:version>0.1.2</em:version>
+
+		<!-- Firefox -->
+		<em:targetApplication>
+			<Description>
+				<em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
+				<em:minVersion>3.0</em:minVersion>
+				<em:maxVersion>3.6.*</em:maxVersion>
+			</Description>
+		</em:targetApplication>
+
+		<!-- Firedog -->
+		<em:name>Firedog</em:name>
+		<em:description>Firebug Extension including Object Observer and Memory Profiler</em:description>
+		<em:creator>Xiaoxing Wang</em:creator>
+		<em:homepageURL>http://lab.nuttycoder.com</em:homepageURL>
+	</Description>
+</RDF>
