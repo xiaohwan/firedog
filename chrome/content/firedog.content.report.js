@@ -10,36 +10,40 @@ var Content = (function() {
 	// NOTE: add jsxid, jsxclass, jsxname to object info if it's a GI object;
 	// TODO: support user-defined decorator "if has property A, enable decorateA";
 	function decorateGIObject(obj) {
-		if (!obj.jsxclass && obj.properties) {
-			var __jsxclass = obj.properties['__jsxclass__'];
-			if (!__jsxclass && ! obj.allProps) {
-				obj.allProps = getAllProperties(obj.prototype);
-			}
-			__jsxclass = obj.allProps['__jsxclass__'] || obj.allProps['__jsxclass'];
-			if (__jsxclass) {
-				__jsxclass = searchById(__jsxclass);
-				if (__jsxclass && __jsxclass.properties) {
-					var jsxclass = searchById(__jsxclass.properties['jsxclass']);
-					if (jsxclass) {
-						obj.jsxclass = jsxclass.properties._name || jsxclass.properties.JM;
+		try {
+			if (!obj.jsxclass && obj.properties) {
+				var __jsxclass = obj.properties['__jsxclass__'];
+				if (!__jsxclass && ! obj.allProps) {
+					obj.allProps = getAllProperties(obj.prototype);
+				}
+				__jsxclass = obj.allProps['__jsxclass__'] || obj.allProps['__jsxclass'];
+				if (__jsxclass) {
+					__jsxclass = searchById(__jsxclass);
+					if (__jsxclass && __jsxclass.properties) {
+						var jsxclass = searchById(__jsxclass.properties['jsxclass']);
+						if (jsxclass) {
+							obj.jsxclass = jsxclass.properties._name || jsxclass.properties.JM;
+						}
 					}
 				}
 			}
-		}
-		if (!obj.jsxname && obj.properties) {
-			obj.jsxname = obj.properties.jsxname;
-			obj.jsxid = obj.properties._jsxid;
-		}
-		if (obj.jsxname || obj.jsxid || obj.jsxclass) {
-			var name = ' (';
-			if (obj.jsxclass) {
-				name += '@' + obj.jsxclass + ' ';
+			if (!obj.jsxname && obj.properties) {
+				obj.jsxname = obj.properties.jsxname;
+				obj.jsxid = obj.properties._jsxid;
 			}
-			if (obj.jsxname || obj.jsxid) {
-				name += obj.jsxid + '/' + obj.jsxname;
+			if (obj.jsxname || obj.jsxid || obj.jsxclass) {
+				var name = ' (';
+				if (obj.jsxclass) {
+					name += '@' + obj.jsxclass + ' ';
+				}
+				if (obj.jsxname || obj.jsxid) {
+					name += obj.jsxid + '/' + obj.jsxname;
+				}
+				name += ')';
+				obj.giname = name;
 			}
-			name += ')';
-			obj.giname = name;
+		} catch(ex) {
+			alert(1);
 		}
 	}
 
@@ -141,33 +145,37 @@ var Content = (function() {
 
 	// NOTE: get object detail html;
 	function getObjectDescription(obj) {
-		if (typeof(obj) == 'object') {
-			var desc = ['<h4>Basic Info</h4>', 'Native Class: ', obj.nativeClass, '<br />', 'Scope: ', wrapObjectIdHtml(obj.parent), '<br />', 'Prototype: ', wrapObjectIdHtml(obj.prototype), '<br />', 'Refering: ', wrapObjectIdHtml(obj.children)];
-			desc.push('<h4>Properties</h4>');
-			if (obj.properties) {
-				for (var p in obj.properties) {
-					desc = desc.concat([p, ' => ', ifObjectId(obj.properties[p]) ? wrapObjectIdHtml(obj.properties[p]) : obj.properties[p] + '', '<br />']);
+		try {
+			if (typeof(obj) == 'object') {
+				var desc = ['<h4>Basic Info</h4>', 'Native Class: ', obj.nativeClass, '<br />', 'Size: ', obj.size, '<br />', 'Scope: ', wrapObjectIdHtml(obj.parent), '<br />', 'Prototype: ', wrapObjectIdHtml(obj.prototype), '<br />', 'Refering: ', wrapObjectIdHtml(obj.children)];
+				desc.push('<h4>Properties</h4>');
+				if (obj.properties) {
+					for (var p in obj.properties) {
+						desc = desc.concat([p, ' => ', ifObjectId(obj.properties[p]) ? wrapObjectIdHtml(obj.properties[p]) : obj.properties[p] + '', '<br />']);
+					}
+				} else {
+					desc.push('No property of this object is profiled. It maybe because this type "' + obj.nativeClass + '" is not added to the list of "interested types.". You can add it by editing /content/profiler.js in extension folder.');
 				}
-			} else {
-				desc.push('No property of this object is profiled. It maybe because this type "' + obj.nativeClass + '" is not added to the list of "interested types.". You can add it by editing /content/profiler.js in extension folder.');
-			}
-			if (!obj.allProps) {
-				obj.allProps = getAllProperties(obj.prototype);
-			}
-			desc.push('<h4>Properties in prototypes</h4>');
-			for (p in obj.allProps) {
-				// NOTE: property is in prorotype but not this object;
-				if (! (p in obj.properties)) {
-					desc = desc.concat([p, ' => ', ifObjectId(obj.allProps[p]) ? wrapObjectIdHtml(obj.allProps[p]) : obj.allProps[p] + '', '<br />']);
+				if (!obj.allProps) {
+					obj.allProps = getAllProperties(obj.prototype);
 				}
-			}
-			if (obj.nativeClass == 'Function') {
-				desc = desc.concat(['<h4>Function Info</h4>', 'name: ', obj.name, '<br />', 'filename: ', obj.filename, '<br />', 'lineStart: ', obj.lineStart, '<br />', 'lineEnd: ', obj.lineEnd]);
-			}
+				desc.push('<h4>Properties in prototypes</h4>');
+				for (p in obj.allProps) {
+					// NOTE: property is in prorotype but not this object;
+					if (! (p in obj.properties)) {
+						desc = desc.concat([p, ' => ', ifObjectId(obj.allProps[p]) ? wrapObjectIdHtml(obj.allProps[p]) : obj.allProps[p] + '', '<br />']);
+					}
+				}
+				if (obj.nativeClass == 'Function') {
+					desc = desc.concat(['<h4>Function Info</h4>', 'Name: ', obj.name, '<br />', 'File Name: ', obj.filename, '<br />', 'Function Size: ', obj.functionSize, '<br />', 'Script Size: ', obj.scriptSize, '<br />', 'Line Start: ', obj.lineStart, '<br />', 'Line End: ', obj.lineEnd]);
+				}
 
-			return '<div id="tab-' + obj.id + '" class="object-details">' + desc.join('') + '</div>';
-		} else if (typeof(obj) == 'string') {
-			return '<h4>No detailed info</h4>';
+				return '<div id="tab-' + obj.id + '" class="object-details">' + desc.join('') + '</div>';
+			} else if (typeof(obj) == 'string') {
+				return '<h4>No detailed info</h4>';
+			}
+		} catch(ex) {
+			alert(2);
 		}
 	}
 
@@ -211,11 +219,13 @@ var Content = (function() {
 						alert('object is open in the reference chain. it\'s a loop reference.');
 					} else {
 						h3.toggleClass('open');
-						if (!hieracheyData[id]) {
-							hieracheyData[id] = searchObjectsByChildren(id);
+						if (h3.hasClass('open')) {
+							if (!hieracheyData[id]) {
+								hieracheyData[id] = searchObjectsByChildren(id);
+							}
+							addColumnToHierachey(hieracheyData[id], id);
+							h3.next('ul').toggleClass('hide');
 						}
-						addColumnToHierachey(hieracheyData[id], id);
-						h3.next('ul').toggleClass('hide');
 					}
 				} catch(ex) {
 					alert(ex);

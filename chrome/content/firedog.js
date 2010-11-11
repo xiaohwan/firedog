@@ -297,7 +297,13 @@ FBL.ns(function() {
 								alert(ex);
 							}
 						}
-						return value === undefined ? true: value;
+						switch (handler) {
+						case 'onDelete':
+							return value !== false;
+							break;
+						default:
+							return value;
+						}
 					};
 
 					// NOTE: attrMembrane include the additional methods we add to a wrapped object;
@@ -307,14 +313,10 @@ FBL.ns(function() {
 							return wrappee.valueOf();
 						},
 						resolve: function(wrappee, wrapped, attr) {
-							if (wrappee[attr] !== undefined) {
-								resolving = true;
-								wrapped[attr] = wrappee[attr];
-								resolving = false;
-								return wrapped;
-							} else {
-								return undefined;
-							}
+							resolving = true;
+							wrapped[attr] = wrappee[attr];
+							resolving = false;
+							return wrapped;
 						},
 						enumerate: function(wrappee, wrapped) {
 							return Iterator(wrappee, true);
@@ -326,14 +328,19 @@ FBL.ns(function() {
 							return invokeHandler('onGet', wrappee, wrapped, attr, value);
 						},
 						addProperty: function(wrappee, wrapped, attr, value) {
-							return invokeHandler('onAdd', wrappee, wrapped, attr, value);
+							wrappee[attr] = invokeHandler('onAdd', wrappee, wrapped, attr, value);
+							return wrappee[attr];
 						},
 						setProperty: function(wrappee, wrapped, attr, value) {
 							wrappee[attr] = invokeHandler('onSet', wrappee, wrapped, attr, value);
 							return wrappee[attr];
 						},
 						delProperty: function(wrappee, wrapped, attr) {
-							return invokeHandler('onDelete', wrappee, wrapped, attr);
+							var bDel = invokeHandler('onDelete', wrappee, wrapped, attr) !== false;
+							if (bDel) {
+								delete(wrappee[attr]);
+							}
+							return bDel;
 						}
 					};
 					// NOTE: observe;
@@ -516,3 +523,4 @@ FBL.ns(function() {
 		Firebug.registerModule(Firebug.Firedog);
 	};
 });
+
