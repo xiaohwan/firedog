@@ -224,8 +224,8 @@ var Content = (function() {
 								hieracheyData[id] = searchObjectsByChildren(id);
 							}
 							addColumnToHierachey(hieracheyData[id], id);
-							h3.next('ul').toggleClass('hide');
 						}
+						h3.next('ul').toggleClass('hide');
 					}
 				} catch(ex) {
 					alert(ex);
